@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Seat Booking</title>
+    <link rel="stylesheet" href="/style.css"/>
+</head>
+<body>
+<h2>Seat Booking (5×5 Grid)</h2>
+<form action="/book" method="post">
+    <div class="grid">
+        <th:block th:each="seat : ${seats}">
+            <button
+                    type="submit"
+                    th:classappend="${seat.status} == T(com.ticketbookingsystem.ticket_booking_system.model.Seat.SeatStatus).BOOKED ? 'booked' : 'available'"
+                    th:disabled="${seat.status} == T(com.ticketbookingsystem.ticket_booking_system.model.Seat.SeatStatus).BOOKED"
+                    th:text="${seat.id}"
+                    th:name="${seat.status} == T(com.ticketbookingsystem.ticket_booking_system.model.Seat.SeatStatus).AVAILABLE ? 'seatIds' : null"
+                    th:value="${seat.id}">
+            </button>
+        </th:block>
+    </div>
+</form>
+
+<p th:if="${success != null}" th:text="${success} ? 'Booking Successful!' : 'Booking Failed. Try again.'"></p>
+</body>
+</html>

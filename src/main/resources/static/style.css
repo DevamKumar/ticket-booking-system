@@ -1,0 +1,19 @@
+.grid {
+    display: grid;
+    grid-template-columns: repeat(5, 60px);
+    grid-gap: 10px;
+    margin: 20px 0;
+}
+button {
+    height: 60px;
+    font-size: 16px;
+    cursor: pointer;
+}
+.available {
+    background-color: lightblue;
+}
+.booked {
+    background-color: gray;
+    color: white;
+    cursor: not-allowed;
+}
