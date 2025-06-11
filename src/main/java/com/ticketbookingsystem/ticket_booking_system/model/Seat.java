@@ -1,9 +1,6 @@
 package com.ticketbookingsystem.ticket_booking_system.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,11 +10,15 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Seat {
+
     @Id
     private Integer id;
 
     @Enumerated(EnumType.STRING)
     private SeatStatus status;
+
+    @Version
+    private Long version;
 
     public enum SeatStatus {
         AVAILABLE,

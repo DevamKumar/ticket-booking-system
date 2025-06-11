@@ -2,25 +2,193 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Seat Booking</title>
-    <link rel="stylesheet" href="/style.css"/>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h2 {
+            color: #333;
+            text-align: center;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(5, 80px);
+            grid-gap: 15px;
+            margin: 20px auto; /* Centering the grid */
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            width: fit-content; /* Ensure grid itself doesn't take full width */
+        }
+        .seat-container {
+            position: relative;
+            height: 80px;
+            display: flex;
+            flex-direction: column; /* Allow content to stack */
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fff;
+            box-sizing: border-box; /* Include padding and border in element's total width and height */
+            transition: background-color 0.2s ease, border-color 0.2s ease; /* Smooth transition */
+        }
+        /* Style for the actual checkbox (hidden) */
+        input[type="checkbox"] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0; /* Make checkbox invisible */
+            cursor: pointer;
+            z-index: 2; /* Ensure checkbox is clickable */
+        }
+        /* Style for the seat label (number) */
+        .seat-label {
+            font-size: 16px;
+            font-weight: bold;
+            color: #555;
+            z-index: 1; /* Ensure label is above checkbox */
+            pointer-events: none; /* Allow click to pass through to checkbox */
+        }
+
+        /* Base styles for available seats */
+        .available {
+            background-color: #e0f7fa; /* Lighter blue */
+            border-color: #00bcd4; /* Cyan border */
+        }
+        .available:hover:not(.selected) { /* Hover effect for non-selected available seats */
+            background-color: #b2ebf2;
+        }
+
+        /* Styles for selected (checked) seats */
+        .seat-container.selected { /* This class will be added by JavaScript */
+            background-color: #007bb5; /* Darker blue when selected */
+            border-color: #005680;
+        }
+        .seat-container.selected .seat-label {
+            color: white; /* Change label color to white when selected */
+        }
+
+        /* Styles for booked seats (unchanged) */
+        .booked {
+            background-color: #cfd8dc; /* Lighter gray */
+            color: #78909c; /* Darker gray text */
+            cursor: not-allowed;
+            border-color: #90a4ae;
+        }
+        .booked .seat-label {
+             color: #78909c; /* Ensure text color for booked seats */
+        }
+
+        .message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .failure {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .submit-button {
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            display: block; /* Make button a block element */
+            margin-left: auto; /* Center button */
+            margin-right: auto; /* Center button */
+        }
+        .submit-button:hover {
+            background-color: #218838;
+        }
+        .submit-button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+    </style>
 </head>
 <body>
-<h2>Seat Booking (5×5 Grid)</h2>
-<form action="/book" method="post">
+<h2>Seat Booking</h2>
+<form action="/book" method="post" id="bookingForm">
     <div class="grid">
         <th:block th:each="seat : ${seats}">
-            <button
-                    type="submit"
-                    th:classappend="${seat.status} == T(com.ticketbookingsystem.ticket_booking_system.model.Seat.SeatStatus).BOOKED ? 'booked' : 'available'"
-                    th:disabled="${seat.status} == T(com.ticketbookingsystem.ticket_booking_system.model.Seat.SeatStatus).BOOKED"
-                    th:text="${seat.id}"
-                    th:name="${seat.status} == T(com.ticketbookingsystem.ticket_booking_system.model.Seat.SeatStatus).AVAILABLE ? 'seatIds' : null"
-                    th:value="${seat.id}">
-            </button>
+            <div th:id="${'seat-container-' + seat.id}"
+                 th:class="${'seat-container ' + (seat.status.name() == 'BOOKED' ? 'booked' : 'available')}">
+                <input
+                        type="checkbox"
+                        name="seatIds"
+                        th:value="${seat.id}"
+                        th:disabled="${seat.status.name() == 'BOOKED'}"
+                        th:id="'seat-' + ${seat.id}"
+                />
+                <label th:for="'seat-' + ${seat.id}" class="seat-label" th:text="${seat.id}"></label>
+            </div>
         </th:block>
     </div>
+    <button type="submit" class="submit-button" id="bookButton" disabled>Book Selected Seats</button>
 </form>
 
-<p th:if="${success != null}" th:text="${success} ? 'Booking Successful!' : 'Booking Failed. Try again.'"></p>
+<p th:if="${success != null}"
+   th:class="${'message ' + (success ? 'success' : 'failure')}"
+   th:text="${success ? 'Booking Successful!' : 'Booking Failed. Some selected seats were already booked or an error occurred.'}">
+</p>
+
+<script>
+    const checkboxes = document.querySelectorAll('input[name="seatIds"]');
+    const bookButton = document.getElementById('bookButton');
+
+    function updateBookButtonState() {
+        let anyChecked = false;
+        checkboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                anyChecked = true;
+            }
+        });
+        bookButton.disabled = !anyChecked;
+    }
+
+    // New function to handle seat color change
+    function handleSeatSelectionChange(event) {
+        const checkbox = event.target;
+        // Get the parent div with class 'seat-container'
+        const seatContainer = checkbox.closest('.seat-container');
+
+        if (seatContainer) {
+            if (checkbox.checked) {
+                seatContainer.classList.add('selected');
+            } else {
+                seatContainer.classList.remove('selected');
+            }
+        }
+        updateBookButtonState(); // Also update button state
+    }
+
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', handleSeatSelectionChange);
+    });
+
+    // Initial check on page load to set colors for pre-selected seats (if any)
+    // and enable/disable the button.
+    checkboxes.forEach(checkbox => {
+        // Manually trigger the change handler for initial state
+        if (checkbox.checked) {
+            const seatContainer = checkbox.closest('.seat-container');
+            if (seatContainer) {
+                seatContainer.classList.add('selected');
+            }
+        }
+    });
+    updateBookButtonState();
+</script>
 </body>
 </html>
