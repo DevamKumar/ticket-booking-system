@@ -28,23 +28,18 @@ public class SeatService {
         if (seatIds == null || seatIds.isEmpty()) {
             return false;
         }
-
         try {
             for (Integer id : seatIds) {
-
                 Optional<Seat> seatOpt = seatRepository.findById(id);
                 if (seatOpt.isEmpty()) {
                     System.err.println("Seat with ID " + id + " not found.");
                     throw new RuntimeException("Seat not found: " + id);
                 }
-
                 Seat seat = seatOpt.get();
-
                 if (seat.getStatus() == Seat.SeatStatus.BOOKED) {
                     System.err.println("Seat with ID " + id + " is already booked.");
                     return false;
                 }
-
                 seat.setStatus(Seat.SeatStatus.BOOKED);
                 seatRepository.save(seat);
             }
